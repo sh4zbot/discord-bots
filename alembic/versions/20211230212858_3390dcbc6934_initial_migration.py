@@ -9,6 +9,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
+
 # revision identifiers, used by Alembic.
 revision = "3390dcbc6934"
 down_revision = None
@@ -21,17 +22,17 @@ def upgrade():
     op.create_table(
         "admin_role",
         sa.Column("role_id", sa.Integer(), nullable=False),
-        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(255), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
         "finished_game",
         sa.Column("finished_at", sa.DateTime(), nullable=False),
-        sa.Column("queue_name", sa.String(), nullable=False),
+        sa.Column("queue_name", sa.String(255), nullable=False),
         sa.Column("started_at", sa.DateTime(), nullable=False),
         sa.Column("win_probability", sa.Float(), nullable=False),
         sa.Column("winning_team", sa.Integer(), nullable=False),
-        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(255), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
@@ -61,7 +62,7 @@ def upgrade():
     op.create_table(
         "player",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("name", sa.String(), nullable=False),
+        sa.Column("name", sa.String(255), nullable=False),
         sa.Column("is_admin", sa.Boolean(), nullable=False),
         sa.Column("is_banned", sa.Boolean(), nullable=False),
         sa.Column("last_activity_at", sa.DateTime(), nullable=True),
@@ -71,23 +72,23 @@ def upgrade():
     )
     op.create_table(
         "queue",
-        sa.Column("name", sa.String(), nullable=False),
+        sa.Column("name", sa.String(255), nullable=False),
         sa.Column("size", sa.Integer(), nullable=False),
-        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(255), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_queue_name"), "queue", ["name"], unique=True)
     op.create_table(
         "finished_game_player",
-        sa.Column("finished_game_id", sa.String(), nullable=False),
+        sa.Column("finished_game_id", sa.String(255), nullable=False),
         sa.Column("player_id", sa.Integer(), nullable=True),
-        sa.Column("player_name", sa.String(), nullable=False),
+        sa.Column("player_name", sa.String(255), nullable=False),
         sa.Column("team", sa.Integer(), nullable=False),
         sa.Column("trueskill_mu_after", sa.Float(), nullable=False),
         sa.Column("trueskill_mu_before", sa.Float(), nullable=False),
         sa.Column("trueskill_sigma_after", sa.Float(), nullable=False),
         sa.Column("trueskill_sigma_before", sa.Float(), nullable=False),
-        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(255), nullable=False),
         sa.ForeignKeyConstraint(
             ["finished_game_id"],
             ["finished_game.id"],
@@ -96,10 +97,10 @@ def upgrade():
             ["player_id"],
             ["player.id"],
         ),
-        sa.ForeignKeyConstraint(
-            ["player_name"],
-            ["player.id"],
-        ),
+        # sa.ForeignKeyConstraint(
+        #     ["player_name"],
+        #     ["player.id"],
+        # ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
@@ -128,10 +129,10 @@ def upgrade():
     )
     op.create_table(
         "in_progress_game",
-        sa.Column("queue_id", sa.String(), nullable=True),
+        sa.Column("queue_id", sa.String(255), nullable=True),
         sa.Column("win_probability", sa.Float(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=True),
-        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(255), nullable=False),
         sa.ForeignKeyConstraint(
             ["queue_id"],
             ["queue.id"],
@@ -152,10 +153,10 @@ def upgrade():
     )
     op.create_table(
         "queue_player",
-        sa.Column("queue_id", sa.String(), nullable=False),
+        sa.Column("queue_id", sa.String(255), nullable=False),
         sa.Column("player_id", sa.Integer(), nullable=False),
         sa.Column("channel_id", sa.Integer(), nullable=False),
-        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(255), nullable=False),
         sa.ForeignKeyConstraint(
             ["player_id"],
             ["player.id"],
@@ -181,9 +182,9 @@ def upgrade():
     )
     op.create_table(
         "queue_role",
-        sa.Column("queue_id", sa.String(), nullable=False),
+        sa.Column("queue_id", sa.String(255), nullable=False),
         sa.Column("role_id", sa.Integer(), nullable=False),
-        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(255), nullable=False),
         sa.ForeignKeyConstraint(
             ["queue_id"],
             ["queue.id"],
@@ -198,10 +199,10 @@ def upgrade():
     )
     op.create_table(
         "queue_waitlist_player",
-        sa.Column("finished_game_id", sa.String(), nullable=False),
-        sa.Column("queue_id", sa.String(), nullable=False),
+        sa.Column("finished_game_id", sa.String(255), nullable=False),
+        sa.Column("queue_id", sa.String(255), nullable=False),
         sa.Column("player_id", sa.Integer(), nullable=False),
-        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(255), nullable=False),
         sa.ForeignKeyConstraint(
             ["finished_game_id"],
             ["finished_game.id"],
@@ -225,9 +226,9 @@ def upgrade():
     )
     op.create_table(
         "in_progress_game_channel",
-        sa.Column("in_progress_game_id", sa.String(), nullable=False),
+        sa.Column("in_progress_game_id", sa.String(255), nullable=False),
         sa.Column("channel_id", sa.Integer(), nullable=False),
-        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(255), nullable=False),
         sa.ForeignKeyConstraint(
             ["in_progress_game_id"],
             ["in_progress_game.id"],
@@ -242,10 +243,10 @@ def upgrade():
     )
     op.create_table(
         "in_progress_game_player",
-        sa.Column("in_progress_game_id", sa.String(), nullable=False),
+        sa.Column("in_progress_game_id", sa.String(255), nullable=False),
         sa.Column("player_id", sa.Integer(), nullable=False),
         sa.Column("team", sa.Integer(), nullable=False),
-        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(255), nullable=False),
         sa.ForeignKeyConstraint(
             ["in_progress_game_id"],
             ["in_progress_game.id"],

@@ -21,11 +21,11 @@ def upgrade():
     op.create_table(
         "queue_waitlist",
         sa.Column("channel_id", sa.Integer(), nullable=False),
-        sa.Column("finished_game_id", sa.String(), nullable=False),
+        sa.Column("finished_game_id", sa.String(255), nullable=False),
         sa.Column("guild_id", sa.Integer(), nullable=False),
-        sa.Column("queue_id", sa.String(), nullable=False),
+        sa.Column("queue_id", sa.String(255), nullable=False),
         sa.Column("end_waitlist_at", sa.DateTime(), nullable=False),
-        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(255), nullable=False),
         sa.ForeignKeyConstraint(
             ["finished_game_id"],
             ["finished_game.id"],
@@ -50,7 +50,13 @@ def upgrade():
             unique=False,
         )
 
-    with op.batch_alter_table("queue_player", schema=None) as batch_op:
+
+    with op.batch_alter_table(
+        "queue_player", schema=None
+    ) as batch_op:
+        batch_op.drop_constraint(
+            batch_op.f("uq_queue_player_queue_id"), type_="unique"
+        )
         batch_op.create_unique_constraint(
             batch_op.f("uq_queue_player_queue_id"), ["queue_id", "player_id"]
         )
@@ -59,7 +65,7 @@ def upgrade():
         "queue_waitlist_player", schema=None
     ) as batch_op:
         batch_op.add_column(
-            sa.Column("queue_waitlist_id", sa.String(), nullable=False)
+            sa.Column("queue_waitlist_id", sa.String(255), nullable=False)
         )
         batch_op.drop_index("ix_queue_waitlist_player_finished_game_id")
         batch_op.create_index(
@@ -78,6 +84,9 @@ def upgrade():
             "queue_waitlist",
             ["queue_waitlist_id"],
             ["id"],
+        )
+        batch_op.drop_constraint(
+            batch_op.f("uq_queue_waitlist_player_finished_game_id"), type_="unique"
         )
         batch_op.drop_column("finished_game_id")
         batch_op.drop_column("queue_id")

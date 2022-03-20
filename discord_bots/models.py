@@ -25,6 +25,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import registry, sessionmaker  # type: ignore
 from sqlalchemy.sql import expression, func
 from sqlalchemy.sql.schema import ForeignKey, MetaData
+from sqlalchemy.dialects.postgresql import BIGINT
 
 load_dotenv()
 DB_NAME = "tribes"
@@ -32,12 +33,16 @@ DB_NAME = "tribes"
 # It may be tempting, but do not set check_same_thread=False here. Sqlite
 # doesn't handle concurrency well and writing to the db on different threads
 # could cause file corruption. Use tasks to ensure that writes happen on the main thread.
-db_url = (
-    f"sqlite:///{DB_NAME}.test.db"
-    if "pytest" in sys.modules
-    else f"sqlite:///{DB_NAME}.db"
-)
-engine = create_engine(db_url, echo=False)
+# db_url = (
+#     f"sqlite:///{DB_NAME}.test.db"
+#     if "pytest" in sys.modules
+#     else f"sqlite:///{DB_NAME}.db"
+# )
+
+db_url = 'postgresql://papijoe:papi@localhost/papijoe'
+
+
+engine = create_engine(db_url, echo=False, pool_size=20, max_overflow=30)
 naming_convention = {
     "ix": "ix_%(column_0_label)s",
     "uq": "uq_%(table_name)s_%(column_0_name)s",
@@ -68,7 +73,7 @@ class AdminRole:
     id: str = field(
         init=False,
         default_factory=lambda: str(uuid4()),
-        metadata={"sa": Column(String, primary_key=True)},
+        metadata={"sa": Column(String(16), primary_key=True)},
     )
 
 
@@ -191,9 +196,7 @@ class FinishedGamePlayer:
         metadata={"sa": Column(Integer, ForeignKey("player.id"), index=True)},
     )
     player_name: str = field(
-        metadata={
-            "sa": Column(String, ForeignKey("player.id"), nullable=False, index=True)
-        },
+        metadata={"sa": Column(String, nullable=False, index=True)},
     )
     team: int = field(metadata={"sa": Column(Integer, nullable=False, index=True)})
     rated_trueskill_mu_after: float = field(
