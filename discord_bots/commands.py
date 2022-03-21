@@ -28,6 +28,7 @@ from PIL import Image
 from sqlalchemy.exc import IntegrityError
 from trueskill import Rating, rate
 from discord_bots.config import SHOW_TRUESKILL
+from dateutil import parser
 
 from discord_bots.utils import (
     upload_stats_screenshot_imgkit,
@@ -106,10 +107,10 @@ def get_even_teams(
     :returns: list of players and win probability for the first team
     """
     session = Session()
+    shuffle(player_ids)
     players: list[Player] = (
         session.query(Player).filter(Player.id.in_(player_ids)).all()
     )
-    shuffle(players)
     if queue_region_id:
         player_region_trueskills = session.query(PlayerRegionTrueskill).filter(
             PlayerRegionTrueskill.player_id.in_(player_ids),
@@ -491,10 +492,10 @@ async def add_player_to_queue(
         tribes_voice_category = categories[TRIBES_VOICE_CATEGORY_CHANNEL_ID]
 
         be_channel = await guild.create_voice_channel(
-            f"{game.team0_name}", category=tribes_voice_category, bitrate=128000
+            f"{game.team0_name}", category=tribes_voice_category, bitrate=96000
         )
         ds_channel = await guild.create_voice_channel(
-            f"{game.team1_name}", category=tribes_voice_category, bitrate=128000
+            f"{game.team1_name}", category=tribes_voice_category, bitrate=96000
         )
         session.add(
             InProgressGameChannel(in_progress_game_id=game.id, channel_id=be_channel.id)
@@ -3444,16 +3445,16 @@ async def stats(ctx: Context):
     total_games = len(fgs)
 
     def last_month(finished_game: FinishedGame) -> bool:
-        return finished_game.finished_at > datetime.now() - timedelta(days=30)
+        return finished_game.finished_at.timestamp() > datetime.now().timestamp() - timedelta(days=30).total_seconds()
 
     def last_three_months(finished_game: FinishedGame) -> bool:
-        return finished_game.finished_at > datetime.now() - timedelta(days=60)
+        return finished_game.finished_at.timestamp() > datetime.now().timestamp() - timedelta(days=60).total_seconds()
 
     def last_six_months(finished_game: FinishedGame) -> bool:
-        return finished_game.finished_at > datetime.now() - timedelta(days=180)
+        return finished_game.finished_at.timestamp() > datetime.now().timestamp() - timedelta(days=180).total_seconds()
 
     def last_year(finished_game: FinishedGame) -> bool:
-        return finished_game.finished_at > datetime.now() - timedelta(days=365)
+        return finished_game.finished_at.timestamp() > datetime.now().timestamp() - timedelta(days=365).total_seconds()
 
     games_last_month = list(filter(last_month, fgs))
     games_last_three_months = list(filter(last_three_months, fgs))

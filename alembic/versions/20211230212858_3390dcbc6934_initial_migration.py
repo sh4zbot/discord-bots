@@ -8,6 +8,9 @@ Create Date: 2021-12-30 21:28:58.338977
 from alembic import op
 import sqlalchemy as sa
 
+from sqlalchemy.dialects.postgresql import BIGINT
+
+
 
 # revision identifiers, used by Alembic.
 revision = "3390dcbc6934"
@@ -60,7 +63,7 @@ def upgrade():
     )
     op.create_table(
         "player",
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", BIGINT, nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("is_admin", sa.Boolean(), nullable=False),
         sa.Column("is_banned", sa.Boolean(), nullable=False),
@@ -80,7 +83,7 @@ def upgrade():
     op.create_table(
         "finished_game_player",
         sa.Column("finished_game_id", sa.String(), nullable=False),
-        sa.Column("player_id", sa.Integer(), nullable=True),
+        sa.Column("player_id", BIGINT, nullable=True),
         sa.Column("player_name", sa.String(), nullable=False),
         sa.Column("team", sa.Integer(), nullable=False),
         sa.Column("trueskill_mu_after", sa.Float(), nullable=False),
@@ -149,8 +152,8 @@ def upgrade():
     op.create_table(
         "queue_player",
         sa.Column("queue_id", sa.String(), nullable=False),
-        sa.Column("player_id", sa.Integer(), nullable=False),
-        sa.Column("channel_id", sa.Integer(), nullable=False),
+        sa.Column("player_id", BIGINT, nullable=False),
+        sa.Column("channel_id", BIGINT, nullable=False),
         sa.Column("id", sa.String(), nullable=False),
         sa.ForeignKeyConstraint(
             ["player_id"],
@@ -196,7 +199,7 @@ def upgrade():
         "queue_waitlist_player",
         sa.Column("finished_game_id", sa.String(), nullable=False),
         sa.Column("queue_id", sa.String(), nullable=False),
-        sa.Column("player_id", sa.Integer(), nullable=False),
+        sa.Column("player_id", BIGINT, nullable=False),
         sa.Column("id", sa.String(), nullable=False),
         sa.ForeignKeyConstraint(
             ["finished_game_id"],
@@ -222,7 +225,7 @@ def upgrade():
     op.create_table(
         "in_progress_game_channel",
         sa.Column("in_progress_game_id", sa.String(), nullable=False),
-        sa.Column("channel_id", sa.Integer(), nullable=False),
+        sa.Column("channel_id", BIGINT, nullable=False),
         sa.Column("id", sa.String(), nullable=False),
         sa.ForeignKeyConstraint(
             ["in_progress_game_id"],
@@ -239,7 +242,7 @@ def upgrade():
     op.create_table(
         "in_progress_game_player",
         sa.Column("in_progress_game_id", sa.String(), nullable=False),
-        sa.Column("player_id", sa.Integer(), nullable=False),
+        sa.Column("player_id", BIGINT, nullable=False),
         sa.Column("team", sa.Integer(), nullable=False),
         sa.Column("id", sa.String(), nullable=False),
         sa.ForeignKeyConstraint(

@@ -8,6 +8,7 @@ Create Date: 2022-01-03 16:58:35.650896
 import sqlalchemy as sa
 
 from alembic import op
+from sqlalchemy.dialects.postgresql import BIGINT
 
 # revision identifiers, used by Alembic.
 revision = "6ff3945a5449"
@@ -82,7 +83,7 @@ def upgrade():
 
     op.create_table(
         "map_vote",
-        sa.Column("player_id", sa.Integer(), nullable=False),
+        sa.Column("player_id", BIGINT, nullable=False),
         sa.Column("voteable_map_id", sa.String(), nullable=False),
         sa.Column("id", sa.String(), nullable=False),
         sa.ForeignKeyConstraint(
@@ -112,7 +113,7 @@ def upgrade():
 
     op.create_table(
         "skip_map_vote",
-        sa.Column("player_id", sa.Integer(), nullable=False),
+        sa.Column("player_id", BIGINT, nullable=False),
         sa.Column("id", sa.String(), nullable=False),
         sa.ForeignKeyConstraint(
             ["player_id"],

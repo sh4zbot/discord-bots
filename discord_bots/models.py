@@ -32,12 +32,19 @@ DB_NAME = "tribes"
 # It may be tempting, but do not set check_same_thread=False here. Sqlite
 # doesn't handle concurrency well and writing to the db on different threads
 # could cause file corruption. Use tasks to ensure that writes happen on the main thread.
-db_url = (
-    f"sqlite:///{DB_NAME}.test.db"
-    if "pytest" in sys.modules
-    else f"sqlite:///{DB_NAME}.db"
-)
-engine = create_engine(db_url, echo=False)
+
+# db_url = (
+#     f"sqlite:///{DB_NAME}.test.db"
+#     if "pytest" in sys.modules
+#     else f"sqlite:///{DB_NAME}.db"
+# )
+# engine = create_engine(db_url, echo=False)
+
+# psql
+db_url = 'postgresql://' + os.getenv("DB_USER_NAME") + ':' + os.getenv("DB_PASSWORD") + '@localhost/' + os.getenv("DB_NAME")
+engine = create_engine(db_url, echo=False, pool_size=20, max_overflow=30)
+
+
 naming_convention = {
     "ix": "ix_%(column_0_label)s",
     "uq": "uq_%(table_name)s_%(column_0_name)s",

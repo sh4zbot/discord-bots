@@ -8,6 +8,7 @@ Create Date: 2022-01-20 18:51:15.122518
 import sqlalchemy as sa
 
 from alembic import op
+from sqlalchemy.dialects.postgresql import BIGINT
 
 # revision identifiers, used by Alembic.
 revision = "509440a9c704"
@@ -21,7 +22,7 @@ def upgrade():
     op.create_table(
         "queue_notification",
         sa.Column("queue_id", sa.String(), nullable=False),
-        sa.Column("player_id", sa.Integer(), nullable=False),
+        sa.Column("player_id", BIGINT, nullable=False),
         sa.Column("size", sa.Integer(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=True),
         sa.Column("id", sa.String(), nullable=False),
