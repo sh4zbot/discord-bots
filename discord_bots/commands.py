@@ -2124,9 +2124,6 @@ async def finishgame(ctx: Context, outcome: str):
     session.query(InProgressGamePlayer).filter(
         InProgressGamePlayer.in_progress_game_id == in_progress_game.id
     ).delete()
-    session.query(InProgressGame).filter(
-        InProgressGame.id == in_progress_game.id
-    ).delete()
 
     embed_description = ""
     duration: timedelta = finished_game.finished_at.replace(
@@ -2140,7 +2137,6 @@ async def finishgame(ctx: Context, outcome: str):
         embed_description = (
             f"**Tie game**\n**Duration:** {duration.seconds // 60} minutes"
         )
-
     queue = session.query(Queue).filter(Queue.id == in_progress_game.queue_id).first()
     if message.guild:
         session.add(
@@ -2156,8 +2152,8 @@ async def finishgame(ctx: Context, outcome: str):
         )
     session.commit()
     queue_name = queue.name
-    session.close()
     short_in_progress_game_id = in_progress_game.id.split("-")[0]
+    session.close()
     await send_message(
         message.channel,
         content=f"Game '{queue_name}' ({short_in_progress_game_id}) finished",

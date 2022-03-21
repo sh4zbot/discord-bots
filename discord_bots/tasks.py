@@ -188,7 +188,6 @@ async def queue_waitlist_task():
                             guild,
                         )
                     )
-
         for igp_channel in session.query(InProgressGameChannel).filter(
             InProgressGameChannel.in_progress_game_id
             == queue_waitlist.in_progress_game_id
@@ -198,11 +197,13 @@ async def queue_waitlist_task():
                 if guild_channel:
                     await guild_channel.delete()
             session.delete(igp_channel)
-
         session.query(QueueWaitlistPlayer).filter(
             QueueWaitlistPlayer.queue_waitlist_id == queue_waitlist.id
         ).delete()
         session.delete(queue_waitlist)
+        session.query(InProgressGame).filter(
+            InProgressGame.id == queue_waitlist.in_progress_game_id
+        ).delete()
     session.commit()
 
 
