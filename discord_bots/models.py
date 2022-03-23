@@ -42,7 +42,7 @@ DB_NAME = "tribes"
 
 # psql
 db_url = 'postgresql://' + os.getenv("DB_USER_NAME") + ':' + os.getenv("DB_PASSWORD") + '@localhost/' + os.getenv("DB_NAME")
-engine = create_engine(db_url, echo=False, pool_size=20, max_overflow=30)
+engine = create_engine(db_url, echo=False, pool_size=40, max_overflow=50)
 
 
 naming_convention = {
