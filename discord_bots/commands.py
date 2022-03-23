@@ -1437,7 +1437,9 @@ async def cancelgame(ctx: Context, game_id: str):
                 await guild_channel.delete()
         session.delete(channel)
 
-    session.delete(game)
+    session.query(InProgressGame).filter(
+            InProgressGame.id == game.id
+        ).delete()
     session.commit()
     await send_message(
         message.channel,
