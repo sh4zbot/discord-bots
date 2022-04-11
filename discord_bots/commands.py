@@ -2201,16 +2201,24 @@ async def isolatequeue(ctx: Context, queue_name: str):
 
 
 @bot.command()
-async def leaderboard(ctx: Context):
+async def leaderboard(ctx: Context, *args):
     if not SHOW_TRUESKILL:
         await send_message(
             ctx.message.channel, embed_description="Command disabled", colour=Colour.red()
         )
         return
 
+    if len(args) != 1:
+        await send_message(
+            ctx.message.channel,
+            embed_description="Usage: !leaderboard <queue_region>",
+            colour=Colour.red(),
+        )
+        return
+
     output = "**Leaderboard**"
     session = Session()
-    queue_regions: list[QueueRegion] = session.query(QueueRegion).all()
+    queue_regions: list[QueueRegion] = session.query(QueueRegion).filter( args[0] == QueueRegion.name).all()
     if len(queue_regions) > 0:
         for queue_region in queue_regions:
             output += f"\n_{queue_region.name}_"
@@ -2226,7 +2234,7 @@ async def leaderboard(ctx: Context):
             output += "\n"
         pass
     else:
-        output = "**Leaderboard**"
+        output = "**Leaderboard**\nranked"
         top_10_players: list[Player] = (
             session.query(Player).order_by(Player.leaderboard_trueskill.desc()).limit(10)
         )
