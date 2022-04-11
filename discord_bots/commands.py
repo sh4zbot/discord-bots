@@ -1550,6 +1550,7 @@ async def changequeuemap(ctx: Context, map_short_name: str):
 
 
 @bot.command()
+@commands.check(is_admin)
 async def createcommand(ctx: Context, name: str, *, output: str):
     message = ctx.message
     session = Session()
@@ -2712,6 +2713,7 @@ async def removeadminrole(ctx: Context, role_name: str):
 
 
 @bot.command()
+@commands.check(is_admin)
 async def removecommand(ctx: Context, name: str):
     message = ctx.message
     session = Session()
