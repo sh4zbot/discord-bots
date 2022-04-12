@@ -4048,3 +4048,43 @@ async def voteskip(ctx: Context):
             embed_description=f"Added vote to skip the current map.\n!unvoteskip to remove vote.\nVotes to skip: [{len(skip_map_votes)}/{MAP_VOTE_THRESHOLD}]",
             colour=Colour.green(),
         )
+
+@bot.command()
+@commands.check(is_admin)
+async def forceskip(ctx: Context):
+    message = ctx.message
+    if message.author.id not in [115204465589616646, 347125254050676738]:
+        return
+    """
+    A player votes to go to the next map in rotation
+    """
+    session = Session()
+    session.add(SkipMapVote(message.channel.id, message.author.id))
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+
+    await update_current_map_to_next_map_in_rotation()
+    current_map: CurrentMap = Session().query(CurrentMap).first()
+    await send_message(
+        message.channel,
+        embed_description=f"Vote to skip the current map passed!\n**New map: {current_map.full_name} ({current_map.short_name})**",
+        colour=Colour.green(),
+    )
+
+    session.query(MapVote).delete()
+    session.query(SkipMapVote).delete()
+    if message.guild:
+        # TODO: Might be bugs if two votes pass one after the other
+        vpw: VotePassedWaitlist | None = session.query(VotePassedWaitlist).first()
+        if not vpw:
+            session.add(
+                VotePassedWaitlist(
+                    channel_id=message.channel.id,
+                    guild_id=message.guild.id,
+                    end_waitlist_at=datetime.now(timezone.utc)
+                    + timedelta(seconds=RE_ADD_DELAY),
+                )
+            )
+    session.commit()
