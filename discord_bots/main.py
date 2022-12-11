@@ -51,11 +51,11 @@ async def on_ready():
 
 @bot.event
 async def on_error(self, err, *args, **kwargs):
-		if err == "on_command_error":
-			await args[0].send("Something went wrong.")
+    if err == "on_command_error":
+        await args[0].send("Something went wrong.")
 
-		await self.stdout.send("An error occured.")
-		raise
+    await self.stdout.send("An error occured.")
+    raise
 
 @bot.event
 async def on_command_error(ctx: Context, error: CommandError):
