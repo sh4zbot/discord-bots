@@ -1,4 +1,7 @@
 import os
+import sentry_sdk
+from sentry_sdk import capture_exception, capture_message
+
 from datetime import datetime, timezone
 
 from discord import Colour, Embed, Member, Message, Reaction
@@ -16,6 +19,11 @@ from .tasks import (
     vote_passed_waitlist_task,
 )
 from .utils import CHANNEL_ID
+
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    traces_sample_rate=1.0,
+)
 
 add_player_task.start()
 afk_timer_task.start()
@@ -41,6 +49,13 @@ if SEED_ADMIN_IDS:
 async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
 
+@bot.event
+async def on_error(self, err, *args, **kwargs):
+    if err == "on_command_error":
+        await args[0].send("Something went wrong.")
+
+    await self.stdout.send("An error occured.")
+    raise
 
 @bot.event
 async def on_command_error(ctx: Context, error: CommandError):
@@ -62,8 +77,10 @@ async def on_command_error(ctx: Context, error: CommandError):
     else:
         if ctx.command:
             print("[on_command_error]:", error, ", command:", ctx.command.name)
+            capture_exception(error)
         else:
             print("[on_command_error]:", error)
+            capture_exception(error)
 
 
 @bot.event
