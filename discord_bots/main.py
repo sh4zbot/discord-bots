@@ -1,12 +1,11 @@
-import os
 from datetime import datetime, timezone
 
 from discord import Colour, Embed, Member, Message, Reaction
 from discord.abc import User
 from discord.ext.commands import CommandError, Context, UserInputError
-from dotenv import load_dotenv
 
-from .bot import COMMAND_PREFIX, bot
+from .bot import bot
+from discord_bots.config import API_KEY, COMMAND_PREFIX, CONFIG_VALID, CHANNEL_ID, SEED_ADMIN_IDS
 from .models import CustomCommand, Player, QueuePlayer, QueueWaitlistPlayer, Session
 from .tasks import (
     add_player_task,
@@ -15,7 +14,6 @@ from .tasks import (
     queue_waitlist_task,
     vote_passed_waitlist_task,
 )
-from .utils import CHANNEL_ID
 
 add_player_task.start()
 afk_timer_task.start()
@@ -23,18 +21,14 @@ map_rotation_task.start()
 queue_waitlist_task.start()
 vote_passed_waitlist_task.start()
 
-load_dotenv()
-SEED_ADMIN_IDS = os.getenv("SEED_ADMIN_IDS")
-if SEED_ADMIN_IDS:
-    session = Session()
-    seed_admin_ids = SEED_ADMIN_IDS.split(",")
-    for seed_admin_id in seed_admin_ids:
-        # There always has to be at least one initial admin to add others!
-        player = session.query(Player).filter(Player.id == seed_admin_id).first()
-        if player:
-            player.is_admin = True
-            session.commit()
-    session.close()
+session = Session()
+for seed_admin_id in SEED_ADMIN_IDS:
+    # There always has to be at least one initial admin to add others!
+    player = session.query(Player).filter(Player.id == seed_admin_id).first()
+    if player:
+        player.is_admin = True
+        session.commit()
+session.close()
 
 
 @bot.event
@@ -68,7 +62,7 @@ async def on_command_error(ctx: Context, error: CommandError):
 
 @bot.event
 async def on_message(message: Message):
-    if CHANNEL_ID and message.channel.id == CHANNEL_ID:
+    if message.channel.id == CHANNEL_ID:
         session = Session()
         player: Player | None = (
             session.query(Player).filter(Player.id == message.author.id).first()
@@ -149,12 +143,10 @@ async def on_leave(member: Member):
 
 
 def main():
-    load_dotenv()
-    API_KEY = os.getenv("DISCORD_API_KEY")
-    if API_KEY:
+    if CONFIG_VALID:
         bot.run(API_KEY)
     else:
-        print("You must define DISCORD_API_KEY!")
+        print("You must provide a valid config!")
 
 
 if __name__ == "__main__":

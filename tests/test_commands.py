@@ -11,11 +11,10 @@ from pytest import approx, fixture
 from trueskill import Rating
 
 from discord_bots.commands import (
-    COMMAND_PREFIX,
-    MAP_VOTE_THRESHOLD,
     handle_message,
     is_in_game,
 )
+from discord_bots.config import COMMAND_PREFIX, MAP_VOTE_THRESHOLD
 from discord_bots.models import (
     AdminRole,
     CurrentMap,

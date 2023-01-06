@@ -23,21 +23,18 @@ from discord.ext.commands.context import Context
 from discord.guild import Guild
 from discord.member import Member
 from discord.utils import escape_markdown
-from dotenv import load_dotenv
 from PIL import Image
 from sqlalchemy.exc import IntegrityError
 from trueskill import Rating, rate
-from discord_bots.config import SHOW_TRUESKILL
-from dateutil import parser
 
+import discord_bots.config as config
 from discord_bots.utils import (
     upload_stats_screenshot_imgkit,
     upload_stats_screenshot_selenium,
 )
 
-from .bot import COMMAND_PREFIX, bot
+from .bot import bot
 from .models import (
-    DB_NAME,
     AdminRole,
     CurrentMap,
     CustomCommand,
@@ -68,7 +65,6 @@ from .names import generate_be_name, generate_ds_name
 from .queues import AddPlayerQueueMessage, add_player_queue
 from .twitch import twitch
 from .utils import (
-    RANDOM_MAP_ROTATION,
     mean,
     pretty_format_team,
     send_message,
@@ -77,20 +73,8 @@ from .utils import (
     win_probability,
 )
 
-load_dotenv()
-
-AFK_TIME_MINUTES: int = 45
-DEBUG: bool = bool(os.getenv("DEBUG")) or False
-DISABLE_PRIVATE_MESSAGES = bool(os.getenv("DISABLE_PRIVATE_MESSAGES"))
-MAP_ROTATION_MINUTES: int = 60
-# The number of votes needed to succeed a map skip / replacement
-MAP_VOTE_THRESHOLD: int = 7
-RE_ADD_DELAY: int = 30
-
-
 def debug_print(*args):
-    global DEBUG
-    if DEBUG:
+    if config.DEBUG:
         print(args)
 
 
@@ -438,7 +422,7 @@ async def add_player_to_queue(
         )
 
         for player in team0_players:
-            if not DISABLE_PRIVATE_MESSAGES:
+            if not config.DISABLE_PRIVATE_MESSAGES:
                 member: Member | None = guild.get_member(player.id)
                 if member:
                     try:
@@ -460,7 +444,7 @@ async def add_player_to_queue(
             session.add(game_player)
 
         for player in team1_players:
-            if not DISABLE_PRIVATE_MESSAGES:
+            if not config.DISABLE_PRIVATE_MESSAGES:
                 member: Member | None = guild.get_member(player.id)
                 if member:
                     try:
@@ -489,7 +473,7 @@ async def add_player_to_queue(
         )
 
         categories = {category.id: category for category in guild.categories}
-        tribes_voice_category = categories[TRIBES_VOICE_CATEGORY_CHANNEL_ID]
+        tribes_voice_category = categories[config.TRIBES_VOICE_CATEGORY_CHANNEL_ID]
 
         be_channel = await guild.create_voice_channel(
             f"{game.team0_name}", category=tribes_voice_category, bitrate=96000
@@ -988,11 +972,6 @@ def in_progress_game_str(in_progress_game: InProgressGame, debug: bool = False) 
     return output
 
 
-TRIBES_VOICE_CATEGORY_CHANNEL_ID: int = int(
-    os.getenv("TRIBES_VOICE_CATEGORY_CHANNEL_ID") or ""
-)
-
-
 def is_in_game(player_id: int) -> bool:
     return get_player_game(player_id, Session()) is not None
 
@@ -1122,7 +1101,7 @@ async def add(ctx: Context, *args):
         difference: float = (
             vpw.end_waitlist_at.replace(tzinfo=timezone.utc) - current_time
         ).total_seconds()
-        if difference < RE_ADD_DELAY:
+        if difference < config.RE_ADD_DELAY_SECONDS:
             waitlist_message = f"A vote just passed, you will be randomized into the queue in {floor(difference)} seconds"
             await send_message(
                 message.channel,
@@ -1143,8 +1122,8 @@ async def add(ctx: Context, *args):
         )
         current_time: datetime = datetime.now(timezone.utc)
         difference: float = (current_time - finish_time).total_seconds()
-        if difference < RE_ADD_DELAY:
-            time_to_wait: int = floor(RE_ADD_DELAY - difference)
+        if difference < config.RE_ADD_DELAY_SECONDS:
+            time_to_wait: int = floor(config.RE_ADD_DELAY_SECONDS - difference)
             waitlist_message = f"Your game has just finished, you will be randomized into the queue in {time_to_wait} seconds"
             is_waitlist = True
 
@@ -1578,10 +1557,10 @@ async def createcommand(ctx: Context, name: str, *, output: str):
 async def createdbbackup(ctx: Context):
     message = ctx.message
     date_string = datetime.now().strftime("%Y-%m-%d")
-    copyfile(f"{DB_NAME}.db", f"{DB_NAME}_{date_string}.db")
+    copyfile(f"{config.DB_NAME}.db", f"{config.DB_NAME}_{date_string}.db")
     await send_message(
         message.channel,
-        embed_description=f"Backup made to {DB_NAME}_{date_string}.db",
+        embed_description=f"Backup made to {config.DB_NAME}_{date_string}.db",
         colour=Colour.green(),
     )
 
@@ -2150,7 +2129,7 @@ async def finishgame(ctx: Context, outcome: str):
                 in_progress_game_id=in_progress_game.id,
                 queue_id=queue.id,
                 end_waitlist_at=datetime.now(timezone.utc)
-                + timedelta(seconds=RE_ADD_DELAY),
+                + timedelta(seconds=config.RE_ADD_DELAY_SECONDS),
             )
         )
     session.commit()
@@ -2202,7 +2181,7 @@ async def isolatequeue(ctx: Context, queue_name: str):
 
 @bot.command()
 async def leaderboard(ctx: Context, *args):
-    if not SHOW_TRUESKILL:
+    if not config.SHOW_TRUESKILL:
         await send_message(
             ctx.message.channel, embed_description="Command disabled", colour=Colour.red()
         )
@@ -2462,8 +2441,8 @@ async def map_(ctx: Context):
         time_since_update: timedelta = datetime.now(
             timezone.utc
         ) - current_map.updated_at.replace(tzinfo=timezone.utc)
-        time_until_rotation = MAP_ROTATION_MINUTES - (time_since_update.seconds // 60)
-        if RANDOM_MAP_ROTATION:
+        time_until_rotation = config.MAP_ROTATION_MINUTES - (time_since_update.seconds // 60)
+        if config.RANDOM_MAP_ROTATION:
             output += f"**Next map: {current_map.full_name} ({current_map.short_name})**\n_(Auto-rotates to a random map in {time_until_rotation} minutes)_\n"
         else:
             if current_map.map_rotation_index == 0:
@@ -2472,7 +2451,7 @@ async def map_(ctx: Context):
                 output += f"**Next map: {current_map.full_name} ({current_map.short_name})**\n_Map after next (auto-rotates in {time_until_rotation} minutes): {next_map.full_name} ({next_map.short_name})_\n"
     skip_map_votes: list[SkipMapVote] = session.query(SkipMapVote).all()
     output += (
-        f"_Votes to skip (voteskip): [{len(skip_map_votes)}/{MAP_VOTE_THRESHOLD}]_\n"
+        f"_Votes to skip (voteskip): [{len(skip_map_votes)}/{config.MAP_VOTE_THRESHOLD}]_\n"
     )
 
     # TODO: This is duplicated
@@ -2483,7 +2462,7 @@ async def map_(ctx: Context):
     )
     voted_maps_str = ", ".join(
         [
-            f"{voted_map.short_name} [{voted_map_ids.count(voted_map.id)}/{MAP_VOTE_THRESHOLD}]"
+            f"{voted_map.short_name} [{voted_map_ids.count(voted_map.id)}/{config.MAP_VOTE_THRESHOLD}]"
             for voted_map in voted_maps
         ]
     )
@@ -2501,7 +2480,7 @@ async def mockrandomqueue(ctx: Context, *args):
 
     This will send PMs to players, create voice channels, etc. so be careful
     """
-    if message.author.id not in [115204465589616646, 347125254050676738]:
+    if message.author.id not in config.MOCK_COMMAND_USERS:
         await send_message(
             message.channel,
             embed_description="Only special people can use this command",
@@ -2964,11 +2943,10 @@ async def resetplayertrueskill(ctx: Context, member: Member):
 @commands.check(is_admin)
 async def setadddelay(ctx: Context, delay_seconds: int):
     message = ctx.message
-    global RE_ADD_DELAY
-    RE_ADD_DELAY = delay_seconds
+    config.RE_ADD_DELAY_SECONDS = delay_seconds
     await send_message(
         message.channel,
-        embed_description=f"Delay between games set to {RE_ADD_DELAY}",
+        embed_description=f"Delay between games set to {config.RE_ADD_DELAY_SECONDS}",
         colour=Colour.green(),
     )
 
@@ -3086,12 +3064,11 @@ async def setqueueunrated(ctx: Context, queue_name: str):
 @commands.check(is_admin)
 async def setmapvotethreshold(ctx: Context, threshold: int):
     message = ctx.message
-    global MAP_VOTE_THRESHOLD
-    MAP_VOTE_THRESHOLD = threshold
+    config.MAP_VOTE_THRESHOLD = threshold
 
     await send_message(
         message.channel,
-        embed_description=f"Map vote threshold set to {MAP_VOTE_THRESHOLD}",
+        embed_description=f"Map vote threshold set to {config.MAP_VOTE_THRESHOLD}",
         colour=Colour.green(),
     )
 
@@ -3260,10 +3237,10 @@ async def status(ctx: Context, *args):
             time_since_update: timedelta = datetime.now(
                 timezone.utc
             ) - current_map.updated_at.replace(tzinfo=timezone.utc)
-            time_until_rotation = MAP_ROTATION_MINUTES - (
+            time_until_rotation = config.MAP_ROTATION_MINUTES - (
                 time_since_update.seconds // 60
             )
-            if RANDOM_MAP_ROTATION:
+            if config.RANDOM_MAP_ROTATION:
                 output += f"**Next map: {current_map.full_name} ({current_map.short_name})**\n_(Auto-rotates to a random map in {time_until_rotation} minutes)_\n"
             else:
                 if current_map.map_rotation_index == 0:
@@ -3271,7 +3248,7 @@ async def status(ctx: Context, *args):
                 else:
                     output += f"**Next map: {current_map.full_name} ({current_map.short_name})**\n_Map after next (auto-rotates in {time_until_rotation} minutes): {next_map.full_name} ({next_map.short_name})_\n"
         skip_map_votes: list[SkipMapVote] = session.query(SkipMapVote).all()
-        output += f"_Votes to skip (voteskip): [{len(skip_map_votes)}/{MAP_VOTE_THRESHOLD}]_\n"
+        output += f"_Votes to skip (voteskip): [{len(skip_map_votes)}/{config.MAP_VOTE_THRESHOLD}]_\n"
 
         # TODO: This is duplicated
         map_votes: list[MapVote] = session.query(MapVote).all()
@@ -3281,7 +3258,7 @@ async def status(ctx: Context, *args):
         )
         voted_maps_str = ", ".join(
             [
-                f"{voted_map.short_name} [{voted_map_ids.count(voted_map.id)}/{MAP_VOTE_THRESHOLD}]"
+                f"{voted_map.short_name} [{voted_map_ids.count(voted_map.id)}/{config.MAP_VOTE_THRESHOLD}]"
                 for voted_map in voted_maps
             ]
         )
@@ -3390,13 +3367,13 @@ async def stats(ctx: Context):
     players: list[Player] = session.query(Player).all()
 
     default_rating = Rating()
-    DEFAULT_TRUESKILL_MU = float(os.getenv("DEFAULT_TRUESKILL_MU") or default_rating.mu)
+    default_mu = config.DEFAULT_TRUESKILL_MU or default_rating.mu
 
     # Filter players that haven't played a game
     players = list(
         filter(
             lambda x: x.rated_trueskill_mu != default_rating.mu
-            and x.rated_trueskill_mu != DEFAULT_TRUESKILL_MU,
+            and x.rated_trueskill_mu != default_mu,
             players,
         )
     )
@@ -3490,7 +3467,7 @@ async def stats(ctx: Context):
     winrate_last_year = win_rate(wins_last_year, losses_last_year, ties_last_year)
 
     output = ""
-    if SHOW_TRUESKILL:
+    if config.SHOW_TRUESKILL:
         output += f"**Trueskill:**"
         player_region_trueskills: list[PlayerRegionTrueskill] = (
             session.query(PlayerRegionTrueskill)
@@ -3524,12 +3501,9 @@ async def stats(ctx: Context):
     )
 
 
-TWITCH_GAME_NAME: str | None = os.getenv("TWITCH_GAME_NAME")
-
-
 @bot.command()
 async def streams(ctx: Context):
-    if not TWITCH_GAME_NAME:
+    if not config.TWITCH_GAME_NAME:
         await send_message(
             channel=ctx.message.channel,
             embed_description=f"TWITCH_GAME_NAME not set!",
@@ -3545,7 +3519,7 @@ async def streams(ctx: Context):
         )
         return
 
-    games_data = twitch.get_games(names=[TWITCH_GAME_NAME])
+    games_data = twitch.get_games(names=[config.TWITCH_GAME_NAME])
     game_id = games_data["data"][0]["id"]
     game_name = games_data["data"][0]["name"]
     game_box_art_url = (
@@ -3679,7 +3653,7 @@ async def sub(ctx: Context, member: Member):
 
     for player in team0_players:
         # TODO: This block is duplicated
-        if not DISABLE_PRIVATE_MESSAGES:
+        if not config.DISABLE_PRIVATE_MESSAGES:
             if message.guild:
                 member_: Member | None = message.guild.get_member(player.id)
                 if member_:
@@ -3703,7 +3677,7 @@ async def sub(ctx: Context, member: Member):
 
     for player in team1_players:
         # TODO: This block is duplicated
-        if not DISABLE_PRIVATE_MESSAGES:
+        if not config.DISABLE_PRIVATE_MESSAGES:
             if message.guild:
                 member_: Member | None = message.guild.get_member(player.id)
                 if member_:
@@ -3945,7 +3919,7 @@ async def votemap(ctx: Context, map_short_name: str):
         .filter(MapVote.voteable_map_id == voteable_map.id)
         .all()
     )
-    if len(map_votes) == MAP_VOTE_THRESHOLD:
+    if len(map_votes) == config.MAP_VOTE_THRESHOLD:
         current_map: CurrentMap | None = session.query(CurrentMap).first()
         if current_map:
             current_map.full_name = voteable_map.full_name
@@ -3978,7 +3952,7 @@ async def votemap(ctx: Context, map_short_name: str):
                     channel_id=message.channel.id,
                     guild_id=message.guild.id,
                     end_waitlist_at=datetime.now(timezone.utc)
-                    + timedelta(seconds=RE_ADD_DELAY),
+                    + timedelta(seconds=config.RE_ADD_DELAY_SECONDS),
                 )
             )
         session.commit()
@@ -3990,7 +3964,7 @@ async def votemap(ctx: Context, map_short_name: str):
         )
         voted_maps_str = ", ".join(
             [
-                f"{voted_map.short_name} [{voted_map_ids.count(voted_map.id)}/{MAP_VOTE_THRESHOLD}]"
+                f"{voted_map.short_name} [{voted_map_ids.count(voted_map.id)}/{config.MAP_VOTE_THRESHOLD}]"
                 for voted_map in voted_maps
             ]
         )
@@ -4017,7 +3991,7 @@ async def voteskip(ctx: Context):
         session.rollback()
 
     skip_map_votes: list[SkipMapVote] = Session().query(SkipMapVote).all()
-    if len(skip_map_votes) >= MAP_VOTE_THRESHOLD:
+    if len(skip_map_votes) >= config.MAP_VOTE_THRESHOLD:
         await update_current_map_to_next_map_in_rotation()
         current_map: CurrentMap = Session().query(CurrentMap).first()
         await send_message(
@@ -4037,7 +4011,7 @@ async def voteskip(ctx: Context):
                         channel_id=message.channel.id,
                         guild_id=message.guild.id,
                         end_waitlist_at=datetime.now(timezone.utc)
-                        + timedelta(seconds=RE_ADD_DELAY),
+                        + timedelta(seconds=config.RE_ADD_DELAY_SECONDS),
                     )
                 )
         session.commit()
@@ -4045,7 +4019,7 @@ async def voteskip(ctx: Context):
         skip_map_votes: list[SkipMapVote] = session.query(SkipMapVote).all()
         await send_message(
             message.channel,
-            embed_description=f"Added vote to skip the current map.\n!unvoteskip to remove vote.\nVotes to skip: [{len(skip_map_votes)}/{MAP_VOTE_THRESHOLD}]",
+            embed_description=f"Added vote to skip the current map.\n!unvoteskip to remove vote.\nVotes to skip: [{len(skip_map_votes)}/{config.MAP_VOTE_THRESHOLD}]",
             colour=Colour.green(),
         )
 
@@ -4084,7 +4058,7 @@ async def forceskip(ctx: Context):
                     channel_id=message.channel.id,
                     guild_id=message.guild.id,
                     end_waitlist_at=datetime.now(timezone.utc)
-                    + timedelta(seconds=RE_ADD_DELAY),
+                    + timedelta(seconds=config.RE_ADD_DELAY),
                 )
             )
     session.commit()

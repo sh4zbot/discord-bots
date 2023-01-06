@@ -1,11 +1,6 @@
-import os
-import dotenv
 from twitchAPI.twitch import Twitch
 
-dotenv.load_dotenv()
-
-TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID")
-TWITCH_CLIENT_SECRET = os.getenv("TWITCH_CLIENT_SECRET")
+from discord_bots.config import TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET
 
 twitch = None
 if TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET:

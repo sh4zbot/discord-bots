@@ -1,17 +1,12 @@
 # This file exists to avoid a circular reference
 
-import os
-
 import discord
 from discord.ext import commands
-from dotenv import load_dotenv
+
+from discord_bots.config import COMMAND_PREFIX
 
 intents = discord.Intents.default()
 intents.members = True
-
-load_dotenv()
-COMMAND_PREFIX: str = os.getenv("COMMAND_PREFIX") or "!"
-
 
 bot = commands.Bot(
     case_insensitive=True,

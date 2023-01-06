@@ -16,8 +16,6 @@ from discord.utils import escape_markdown
 
 from .bot import bot
 from .commands import (
-    AFK_TIME_MINUTES,
-    MAP_ROTATION_MINUTES,
     add_player_to_queue,
     is_in_game,
 )
@@ -37,13 +35,14 @@ from .models import (
     VotePassedWaitlistPlayer,
 )
 from .queues import AddPlayerQueueMessage, add_player_queue
-from .utils import RANDOM_MAP_ROTATION, send_message, update_current_map_to_next_map_in_rotation
+from .utils import send_message, update_current_map_to_next_map_in_rotation
+import discord_bots.config as config
 
 
 @tasks.loop(minutes=1)
 async def afk_timer_task():
     session = Session()
-    timeout: datetime = datetime.now(timezone.utc) - timedelta(minutes=AFK_TIME_MINUTES)
+    timeout: datetime = datetime.now(timezone.utc) - timedelta(minutes=config.AFK_TIME_MINUTES)
 
     player: Player
     for player in (
@@ -65,7 +64,7 @@ async def afk_timer_task():
                         channel,
                         content=member.mention,
                         embed_content=False,
-                        embed_description=f"{escape_markdown(player.name)} was removed from all queues for being inactive for {AFK_TIME_MINUTES} minutes",
+                        embed_description=f"{escape_markdown(player.name)} was removed from all queues for being inactive for {config.AFK_TIME_MINUTES} minutes",
                         colour=Colour.red(),
                     )
             session.query(QueuePlayer).filter(
@@ -91,7 +90,7 @@ async def afk_timer_task():
                         channel,
                         content=member.mention,
                         embed_content=False,
-                        embed_description=f"{escape_markdown(player.name)}'s votes removed for being inactive for {AFK_TIME_MINUTES} minutes",
+                        embed_description=f"{escape_markdown(player.name)}'s votes removed for being inactive for {config.AFK_TIME_MINUTES} minutes",
                         colour=Colour.red(),
                     )
                     votes_removed_sent = True
@@ -117,7 +116,7 @@ async def afk_timer_task():
                             channel,
                             content=member.mention,
                             embed_content=False,
-                            embed_description=f"{escape_markdown(player.name)}'s votes removed for being inactive for {AFK_TIME_MINUTES} minutes",
+                            embed_description=f"{escape_markdown(player.name)}'s votes removed for being inactive for {config.AFK_TIME_MINUTES} minutes",
                             colour=Colour.red(),
                         )
             session.query(SkipMapVote).filter(
@@ -287,14 +286,14 @@ async def map_rotation_task():
     if not current_map:
         return
 
-    if current_map.map_rotation_index == 0 and not RANDOM_MAP_ROTATION:
+    if current_map.map_rotation_index == 0 and not config.RANDOM_MAP_ROTATION:
         # Stop at the first map
         return
 
     time_since_update: timedelta = datetime.now(
         timezone.utc
     ) - current_map.updated_at.replace(tzinfo=timezone.utc)
-    if (time_since_update.seconds // 60) > MAP_ROTATION_MINUTES:
+    if (time_since_update.seconds // 60) > config.MAP_ROTATION_MINUTES:
         await update_current_map_to_next_map_in_rotation()
 
 

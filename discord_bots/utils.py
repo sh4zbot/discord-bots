@@ -11,12 +11,12 @@ import imgkit
 from discord import Colour, DMChannel, Embed, GroupChannel, TextChannel
 from discord.ext.commands.context import Context
 from PIL import Image
-from matplotlib import image
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from trueskill import Rating, global_env
 
 from discord_bots.bot import bot
+from discord_bots.config import CHANNEL_ID, STATS_DIR, STATS_HEIGHT, STATS_WIDTH, RANDOM_MAP_ROTATION
 from discord_bots.models import (
     CurrentMap,
     MapVote,
@@ -25,10 +25,6 @@ from discord_bots.models import (
     Session,
     SkipMapVote,
 )
-
-CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
-
-STATS_DIR: str | None = os.getenv("STATS_DIR")
 
 # Convenience mean function that can handle lists of 0 or 1 length
 def mean(values: list[any]) -> float:
@@ -80,9 +76,6 @@ async def send_message(
     except Exception as e:
         print("[send_message] exception:", e)
 
-
-# Define this for the map rotation to be random
-RANDOM_MAP_ROTATION = bool(os.getenv("RANDOM_MAP_ROTATION"))
 
 async def update_current_map_to_next_map_in_rotation():
     session = Session()
@@ -177,10 +170,10 @@ async def upload_stats_screenshot_imgkit(ctx: Context, cleanup=True):
 
     image_path = os.path.join(STATS_DIR, html_files[0] + ".png")
     imgkit.from_file(os.path.join(STATS_DIR, html_files[0]), image_path, options={"enable-local-file-access": None})
-    if os.getenv("STATS_WIDTH") and os.getenv("STATS_HEIGHT"):
+    if STATS_WIDTH and STATS_HEIGHT:
         image = Image.open(image_path)
         # TODO: Un-hardcode these
-        cropped = image.crop((0, 0, int(os.getenv("STATS_WIDTH")), int(os.getenv("STATS_HEIGHT"))))
+        cropped = image.crop((0, 0, STATS_WIDTH, STATS_HEIGHT))
         cropped.save(image_path)
 
     await ctx.message.channel.send(file=discord.File(image_path))

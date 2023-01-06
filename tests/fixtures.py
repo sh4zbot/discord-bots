@@ -8,7 +8,7 @@ from math import floor
 from random import random
 from uuid import uuid4
 
-from discord_bots.commands import TRIBES_VOICE_CATEGORY_CHANNEL_ID
+from discord_bots.config import TRIBES_VOICE_CATEGORY_CHANNEL_ID
 from discord_bots.models import (
     AdminRole,
     Base,
