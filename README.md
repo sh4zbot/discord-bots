@@ -51,7 +51,8 @@ The following are optional
 - `MAP_VOTE_THRESHOLD` - Amount of players needed in order to vote for or skip a map
 - `RE_ADD_DELAY_SECONDS` - Time in "waiting list" after a game ghas finished
 - `DISABLE_PRIVATE_MESSAGES` - Force bot not to send private messages
--
+- `POP_RANDOM_QUEUE` - Determines which queue starts a game when a single add could pop multiple queues. If false the "first" queue will pop
+
 ## Running the bot
 
 1. `cd discord-bots`

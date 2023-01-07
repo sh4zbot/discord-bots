@@ -311,7 +311,10 @@ async def add_player_task():
         queues_added_to: list[str] = []
         message: AddPlayerQueueMessage = add_player_queue.get()
         queue_popped = False
-        for queue_id in message.queue_ids:
+        queue_ids = message.queue_ids.copy()
+        if config.POP_RANDOM_QUEUE:
+            shuffle(queue_ids)
+        for queue_id in queue_ids:
             queue: Queue = queue_by_id[queue_id]
             if queue.is_locked:
                 continue

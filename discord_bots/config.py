@@ -92,6 +92,7 @@ RE_ADD_DELAY_SECONDS: int = to_int2(key="RE_ADD_DELAY", default=30)
 DEFAULT_TRUESKILL_MU: float | None = to_float2(key="DEFAULT_TRUESKILL_MU")
 DEFAULT_TRUESKILL_SIGMA: float | None = to_float2(key="DEFAULT_TRUESKILL_MU")
 DISABLE_PRIVATE_MESSAGES = to_bool(key="DISABLE_PRIVATE_MESSAGES", default=False)
+POP_RANDOM_QUEUE = to_bool(key="POP_RANDOM_QUEUE", default=True)
 
 # stats
 STATS_DIR: str | None = to_string(key="STATS_DIR")
